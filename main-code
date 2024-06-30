@@ -1,0 +1,243 @@
+clc
+clear all
+close all
+% % histogram equalization
+tunnel= imread('D:\histogram matching\tunnel_bw.jpg');
+pix_counts1=[];
+for i=1:256
+    
+    pix_count=size(find(tunnel==(i-1)));
+    pix_counts1(i,1)=pix_count(1,1);
+end
+[row,column]=size(tunnel);
+normalized_pix_count=pix_counts1./(row*column);% sum of these(PDF)normalized pix counts is 1
+cumulative_pix_count=zeros(size(normalized_pix_count,1),1);
+cumulative_pix_count(1,:)=normalized_pix_count(1);
+
+for i=2:256
+    
+    cumulative_pix_count(i,:)=sum(normalized_pix_count(1:i,:));
+end
+transfer_values=cumulative_pix_count.*255;
+Output_pix_values=round(cumulative_pix_count.*255);
+output_image=zeros(row,column);
+
+% % for output image and histogram generation
+for j=0:255
+            
+    output_image(find(tunnel==j))=Output_pix_values(j+1,:);
+end
+
+pix_counts2=[];
+for i=1:256
+    
+    pix_count=size(find(output_image==(i-1)));
+    pix_counts2(i,1)=pix_count(1,1);
+end
+normalized_pix_count2=pix_counts2./(row*column);% sum of these(PDF)normalized pix counts is 1
+x=0:255;x=x';
+figure(1)
+imshow(tunnel,[])
+figure(2)
+bar(x,normalized_pix_count,"black")
+%title('PDF of Input Image','FontSize',20)
+xlabel('Intensity')
+ylabel('Frequency')
+figure(3)
+imshow(output_image,[])
+figure(4)
+bar(x,normalized_pix_count2,"black")
+%title('Equalized Histogram of Input Image')
+xlabel('Intensity')
+ylabel('Frequency')
+figure(5)
+plot(x,transfer_values,"black")
+%title('Transformation Function for Histogram Equalization')
+xlabel('Input Intensity (r)')
+ylabel('Output Intensity (s)')
+grid on
+
+
+% % specified PDF and doing the histogram equalization 
+new_tunnel= imread('D:\histogram matching\new_tunnel.jpg');
+new_pix_counts1=[];
+for i=1:256
+    
+    new_pix_count=size(find(new_tunnel==(i-1)));
+    new_pix_counts1(i,1)=new_pix_count(1,1);
+end
+[row,column]=size(new_tunnel);
+new_normalized_pix_count=new_pix_counts1./(row*column);% sum of these(PDF)normalized pix counts is 1
+new_cumulative_pix_count=zeros(size(new_normalized_pix_count,1),1);
+new_cumulative_pix_count(1,:)=new_normalized_pix_count(1);
+
+for i=2:256
+    
+    new_cumulative_pix_count(i,:)=sum(new_normalized_pix_count(1:i,:));
+end
+new_transfer_values=new_cumulative_pix_count.*255;
+new_Output_pix_values=round(new_cumulative_pix_count.*255);
+new_output_image=zeros(row,column);
+
+% % for output image and histogram generation
+for j=0:255
+            
+    new_output_image(find(new_tunnel==j))=new_Output_pix_values(j+1,:);
+end
+
+new_pix_counts2=[];
+for i=1:256
+    
+    new_pix_count=size(find(new_output_image==(i-1)));
+    new_pix_counts2(i,1)=new_pix_count(1,1);
+end
+x=0:255;x=x';
+figure(6)
+imshow(new_tunnel,[])
+figure(7)
+bar(x,new_normalized_pix_count,"black")
+%title('Specified Histogram')
+xlabel('Intensity')
+ylabel('Frequency')
+figure(8)
+imshow(new_output_image,[])
+figure(9)
+bar(x,new_pix_counts2,"black")
+%title('Equalized Specified Histogram')
+xlabel('Intensity')
+ylabel('Frequency')
+figure(10)
+plot(x,new_transfer_values,"black")
+%title('Transformation Function for Histogram Equalization')
+xlabel('Input Intensity (r)')
+ylabel('Output Intensity (G)')
+grid on
+
+% % need to compare the s and g values to map the z values
+
+z=zeros(256,1);
+S=Output_pix_values;
+G=new_Output_pix_values;
+
+for i=1:256
+    [r,c]=find(G==S(i));
+    [r1,c1]=find(G==(S(i)-1));
+    [r2,c2]=find(G==(S(i)+1));
+    [r3,c3]=find(G==(S(i)-2));
+   if (isempty(r))&&(isempty(r1))&&(isempty(r2))
+        z(i)=r3(1)-1;
+   elseif(isempty(r))&&(isempty(r1))
+        z(i)=r2(1)-1;
+   elseif (isempty(r))
+       z(i)=r1(1)-1;
+   else
+        z(i)=r(1)-1;
+   end
+end
+final_output_image=zeros(row,column);
+for k=1:256
+    final_output_image(find(output_image==S(k)))=z(k);
+end
+figure(11)
+imshow(final_output_image,[])
+%final_pix_counts=[];
+for i=1:256
+    
+    final_pix_count=size(find(final_output_image==(i-1)));
+    final_pix_counts1(i,1)=final_pix_count(1,1);
+end
+final_normalized_pix_count=final_pix_counts1./(row*column);% sum of these(PDF)normalized pix counts is 1
+figure(12)
+bar(x,final_normalized_pix_count,'black')
+xlabel('Intensity')
+ylabel('Frequency')
+%title('resultant histogram')
+figure(13)
+plot(z,G,'black')
+xlabel('(z)')
+ylabel('(G)')
+grid on
+
+
+% % histogram matching using matlab built-in function
+J = imhistmatch(tunnel,new_tunnel);
+figure(14)
+imshow(J,[])
+for i=1:256
+    
+    built_pix_count=size(find(J==(i-1)));
+    built_pix_counts1(i,1)=built_pix_count(1,1);
+end
+built_normalized_pix_count=built_pix_counts1./(row*column);% sum of these(PDF)normalized pix counts is 1
+figure(15)
+bar(x,built_normalized_pix_count,'black')
+xlabel('Intensity')
+ylabel('Frequency')
+%title('resultant histogram')
+
+% homomorphic filtering
+tunnel_image=double(imread('D:\histogram matching\tunnel_bw.jpg'));
+log_transformed=log(1+tunnel_image);
+%imshow(log_transformed,[0 255])
+ftransformed=fft2(log_transformed);
+gl=0.25;
+gh=2;
+c=1;
+filter_function=ones(row,column);
+D=ones(row,column);
+for i=1:row
+    for j=1:column
+        D(i,j)=sqrt((i-row/2)^2+(j-column/2)^2);
+        filter_function(i,j)=((gh-gl)*(1-exp(-c*(D(i,j)^2/1400^2))))+gl;
+    end
+end
+figure(16)
+plot(D(:),filter_function(:),'black') %filter function
+xlabel('(D)')
+ylabel('(H)')
+grid on
+
+filtered=ftransformed.*filter_function;
+inverse=ifft2(filtered);
+output=exp(abs(inverse));
+figure(17)
+imshow(output,[])
+
+%histogram of unscaled output
+for i=1:256
+    
+    unscaled_pix_count=size(find(round(output)==(i-1)));
+    unscaled_pix_counts1(i,1)=unscaled_pix_count(1,1);
+end
+unscaled_normalized_pix_count=unscaled_pix_counts1./(row*column);% sum of these(PDF)normalized pix counts is 1
+figure(18)
+bar(x,unscaled_normalized_pix_count,"black")
+xlabel('Intensity')
+ylabel('Frequency')
+
+%histogram of rescaled output
+fin_output=rescale(output,0,255);
+fin_output1=round(fin_output);
+%figure(18)
+%imshow(fin_output1,[])
+for i=1:256
+    
+    fin_pix_count=size(find(fin_output1==(i-1)));
+    fin_pix_counts1(i,1)=fin_pix_count(1,1);
+end
+fin_normalized_pix_count=fin_pix_counts1./(row*column);% sum of these(PDF)normalized pix counts is 1
+figure(19)
+bar(x,fin_normalized_pix_count,"black")
+xlabel('Intensity')
+ylabel('Frequency')
+
+% Error Analyses
+% Mean Absolute Error
+x_1=final_normalized_pix_count; %histogram matching
+x_2=built_normalized_pix_count; %HM using MATLAB
+x_3=fin_normalized_pix_count;   %Homomorphic filtering
+x_=new_normalized_pix_count;    %specified histogram
+
+error_1=((sum(abs(x_1-x_)))/256)*100;
+error_2=((sum(abs(x_2-x_)))/256)*100;
+error_3=((sum(abs(x_3-x_)))/256)*100;
