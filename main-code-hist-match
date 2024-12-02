@@ -136,7 +136,7 @@ for i=1:256
 end
 final_output_image=zeros(row,column);
 for k=1:256
-    final_output_image(find(output_image==S(k)))=z(k);
+    final_output_image(find(output_image==S(k)))=z(k); % output of histogram matching
 end
 figure(11)
 imshow(final_output_image,[])
@@ -188,7 +188,7 @@ D=ones(row,column);
 for i=1:row
     for j=1:column
         D(i,j)=sqrt((i-row/2)^2+(j-column/2)^2);
-        filter_function(i,j)=((gh-gl)*(1-exp(-c*(D(i,j)^2/1400^2))))+gl;
+        filter_function(i,j)=((gh-gl)*(1-exp(-c*(D(i,j)^2/1900^2))))+gl;
     end
 end
 figure(16)
@@ -218,8 +218,8 @@ ylabel('Frequency')
 %histogram of rescaled output
 fin_output=rescale(output,0,255);
 fin_output1=round(fin_output);
-%figure(18)
-%imshow(fin_output1,[])
+figure(18)
+imshow(fin_output1,[])
 for i=1:256
     
     fin_pix_count=size(find(fin_output1==(i-1)));
@@ -233,11 +233,34 @@ ylabel('Frequency')
 
 % Error Analyses
 % Mean Absolute Error
-x_1=final_normalized_pix_count; %histogram matching
-x_2=built_normalized_pix_count; %HM using MATLAB
-x_3=fin_normalized_pix_count;   %Homomorphic filtering
-x_=new_normalized_pix_count;    %specified histogram
+x_1 = final_output_image; %histogram matching
+x_2 = double(J); %HM using MATLAB
+x_3 = fin_output1;   %Homomorphic filtering
+x_= double(new_tunnel);    %specified image
 
-error_1=((sum(abs(x_1-x_)))/256)*100;
-error_2=((sum(abs(x_2-x_)))/256)*100;
-error_3=((sum(abs(x_3-x_)))/256)*100;
+error_1=((sum(abs(x_1(:)-x_(:))))/1308000);
+error_2=((sum(abs(x_2(:)-x_(:))))/1308000);
+error_3=((sum(abs(x_3(:)-x_(:))))/1308000);
+
+
+% Edge detection using Sobel operator
+
+Hz = [-1 0 1; -2 0 2; -1 0 1]; % horizontal operator
+Vt = [1 2 1; 0 0 0; -1 -2 -1]; % vertical operator
+
+% operation on histogram matched image
+G_x = conv2(Hz,final_output_image);
+G_y = conv2(Vt,final_output_image);
+
+GG = sqrt(G_x.^2 + G_y.^2);
+%GG_new = GG(:);
+figure(20)
+imshow(GG,[])
+
+% operation on homomorphic filtered image
+G_x1 = conv2(Hz, fin_output1);
+G_y1 = conv2(Vt, fin_output1);
+
+GG1 = sqrt(G_x1.^2 + G_y1.^2);
+figure(21)
+imshow(GG1,[])
